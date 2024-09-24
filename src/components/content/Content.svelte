@@ -24,16 +24,48 @@
     let openList = [];
     let openSection = false;
     onMount(()=>{
+        const areEquals = (x, y) => {
+            const ok = Object.keys, tx = typeof x, ty = typeof y;
+            return x && y && tx === 'object' && tx === ty ? (
+                ok(x).length === ok(y).length &&
+                ok(x).every(key => areEquals(x[key], y[key]))
+            ) : (x === y);
+        }
+
         let loaded = localStorage.getItem(lsname);
+    
+        openList = content.map(e => {
+            e.open = false;
+            return e;
+        });
 
         if (!loaded) {
-            openList = content.map(e => {
-                e.open = false;
-                return e;
-            });
+            console.log("setup ls");
             localStorage.setItem(lsname, JSON.stringify(openList));
 
-        } else openList = JSON.parse(localStorage.getItem(lsname));
+        } else {
+            console.log("ls exists");
+            let loadedObj = JSON.parse(loaded).map(e=>{
+                return {
+                    title: e.title
+                }
+            });
+            let toCheck = content.map(e=>{
+                return {
+                    title: e.title
+                }
+            });
+
+
+            if(!areEquals(loadedObj, toCheck)) {
+                console.log("are not equal");
+                localStorage.setItem(lsname, JSON.stringify(openList));
+            }
+            
+            openList = JSON.parse(localStorage.getItem(lsname));
+            
+        }
+        
 
 
         let sectionLoaded = localStorage.getItem(lssectionname);
@@ -101,7 +133,11 @@
             <button class="content{item.list? " list":""}" on:click={minimize}>
                 {#if item.title || item.type || item.time }
                     <div class="contentHeader {doAnimaiton? "textAnimation": ""}" bind:this={animTarget[animTarget.length]}>
-                        {#if item.title} <span class="contentTitle"> {item.title} </span> {/if}
+                        <div class="titleContainer">
+                            {#if item.exam} <ItemIcon icon="Projects" /> {/if}
+                            {#if item.title} <span class="contentTitle"> {item.title} </span> {/if}
+                        </div>
+
                         {#if item.type}  <span class="contentType">  {item.type}  </span> {/if}
                         {#if item.time}  <span class="contentTime">  {item.time}  </span> {/if}
                     </div>
@@ -194,12 +230,22 @@
                 background: none;
                 border: none;
 
+                .titleContainer {
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+                    justify-content: flex-start;
+                    flex-wrap: nowrap;
+                    gap: 10px;
+                }
+
                 .contentBody {
 
                     background: palette.$secondary;
                     user-select: none;
                     
                     padding: 7px;
+                    padding-right: 10px;
                     border-radius: 7px;
                     margin-right: 20px;
                     box-shadow: -2px 2px 3px 1px rgba(0, 0, 0, 0.4);
@@ -207,6 +253,7 @@
                     &.hide * {
                         text-overflow: ellipsis;
                         display: -webkit-box;
+                        color: palette.$primary;
                         line-clamp: 1;
                         -webkit-line-clamp: 1;
                         -webkit-box-orient: vertical;
@@ -314,7 +361,7 @@
 
         .slider {
             width: 8px;
-            height: 90%;
+            height: calc(100% - 30px);
             margin-top: 15px;
 
             background: palette.$highlight;
